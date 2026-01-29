@@ -3,7 +3,9 @@ from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
 from random import randrange
-
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import time
 app = FastAPI()
 
 
@@ -12,6 +14,22 @@ class Post(BaseModel):
     content : str
     published : bool = True
     rating: Optional[int] = None
+
+
+while True:
+    try:
+
+        conn = psycopg2.connect(host = 'localhost', database = 'fastapi', user = 'postgres'
+                                , password = 'god', cursor_factory= RealDictCursor)   
+
+        cursor = conn.cursor()
+        print("Database connection is successfull!") 
+        break
+    except Exception as e:
+        print("Connecting to database failed")
+        print("Error: ", e)
+        time.sleep(2)
+
 
 my_posts = [{"title" : "title of the first post", "content":"Content of the first post", "id": 1} 
              ,{"title": "Library", "content":"This library content all types of book", "id" : 2}]
@@ -52,25 +70,6 @@ def create_posts(post: Post):
 #this is a dictonary and it convertes to a json file later
 
 
-# to run the server use fastapi dev main.py
-# use uvicorn main:app
-
-# @app.post("/createpost")
-# def create_posts(payload: dict = Body(...)): #what this do is take the content from the body and convert that content into the dictionary and store in payload
-#     print(payload)
-#     return{"new_post": f"title : {payload['title']} content : {payload['content']}"}
-
-# @app.post("/createpost")
-# def create_post(new_post : Post): #here we are using our model to check properly if we get title and content from the user instead of collecting an whole bunch of non sense data
-#     print(new_post)
-#     print(new_post.title)
-#     print(new_post.content)
-#     print(new_post.published)
-#     print(new_post.rating)
-#     # print(new_post.dict())
-#     print(new_post.model_dump()) # this is use in the latest pydantic model the above one is used become outdated
-#     return{"data":"new_posts"}
-
 #getting one individual post
 @app.get("/posts/{id}") #here the {id} is the path parameter
 def get_post(id : int):
@@ -79,7 +78,7 @@ def get_post(id : int):
         raise HTTPException (status_code=status.HTTP_404_NOT_FOUND,detail = f"post with{id}: was not found")
     return {"Post_Details" :  post}
 
-
+#deleting a post
 @app.delete("/posts/{id}", status_code = status.HTTP_204_NO_CONTENT)
 def delete_post(id : int):
     index = find_index_post(id)
@@ -94,6 +93,7 @@ def delete_post(id : int):
 # to indicate successful deletion without sending any response data.
 
 
+#updating 
 @app.put("/posts/{id}")
 def get_post(id: int, post:Post):
 
